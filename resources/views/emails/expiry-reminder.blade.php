@@ -37,7 +37,7 @@
                                 <small>{{ $cert->employee->employee_id ?? '' }}</small>
                             </td>
                             <td>{{ $cert->certificate_name }}</td>
-                            <td style="color: #dc3545;">{{ \Carbon\Carbon::parse($cert->expiry_date)->format('d M Y') }}</td>
+                            <td style="color: #dc3545;">{{ \Carbon\Carbon::parse($cert->expiry_date)->format('d-m-Y') }}</td>
                         </tr>
                     @endforeach
                 </tbody>

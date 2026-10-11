@@ -10,6 +10,7 @@
         "intervention/image": "^4.2",
         "laravel/breeze": "^2.4",
         "laravel/framework": "^13.8",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "maatwebsite/excel": "^3.1",

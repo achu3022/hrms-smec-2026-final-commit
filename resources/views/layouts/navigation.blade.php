@@ -18,7 +18,62 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
+            <!-- Right Side (Notifications & Settings) -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+                <!-- Notifications Dropdown -->
+                <div x-data="adminNotifications({{ Auth::id() }}, {{ json_encode(Auth::user()->unreadNotifications->map(fn($n) => ['id' => $n->id, 'message' => $n->data['message'], 'time' => $n->created_at->diffForHumans()])) }})">
+                    <x-dropdown align="right" width="80">
+                        <x-slot name="trigger">
+                            <button class="relative inline-flex items-center p-2 text-gray-500 hover:text-indigo-600 focus:outline-none transition ease-in-out duration-150">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                <template x-if="unreadCount > 0">
+                                    <span class="absolute top-1 right-1 flex h-2.5 w-2.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span>
+                                    </span>
+                                </template>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <div class="max-h-[28rem] overflow-y-auto">
+                                <div class="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 bg-gray-50/80 flex justify-between items-center sticky top-0 backdrop-blur-sm z-10">
+                                    <span>Notifications</span>
+                                    <template x-if="unreadCount > 0">
+                                        <span x-text="unreadCount + ' new'" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700"></span>
+                                    </template>
+                                </div>
+                                
+                                <template x-if="notifications.length === 0">
+                                    <div class="px-4 py-8 text-sm text-gray-400 text-center flex flex-col items-center">
+                                        <svg class="w-8 h-8 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                        <p>No new notifications</p>
+                                    </div>
+                                </template>
+
+                                <template x-for="notification in notifications" :key="notification.id">
+                                    <div class="px-4 py-3 border-b border-gray-50 hover:bg-indigo-50/50 transition-colors flex justify-between items-start group">
+                                        <div class="text-sm text-gray-600 pr-3">
+                                            <span x-text="notification.message" class="text-gray-700 font-medium leading-tight"></span>
+                                            <div class="text-[11px] text-gray-400 mt-1 flex items-center gap-1 font-medium">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                <span x-text="notification.time"></span>
+                                            </div>
+                                        </div>
+                                        <form method="POST" :action="`/admin/notifications/${notification.id}/mark-as-read`">
+                                            @csrf
+                                            <button type="submit" class="text-[10px] uppercase font-bold tracking-wider text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-800 shrink-0 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded">Mark Read</button>
+                                        </form>
+                                    </div>
+                                </template>
+                            </div>
+                        </x-slot>
+                    </x-dropdown>
+                </div>
+
+                <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -98,3 +153,26 @@
         </div>
     </div>
 </nav>
+
+<!-- Push Alpine component for notifications -->
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('adminNotifications', (userId, initialNotifications) => ({
+            notifications: initialNotifications,
+            unreadCount: initialNotifications.length,
+            init() {
+                if (window.Echo) {
+                    window.Echo.private(`App.Models.User.${userId}`)
+                        .notification((notification) => {
+                            this.notifications.unshift({
+                                id: notification.id,
+                                message: notification.message,
+                                time: 'Just now'
+                            });
+                            this.unreadCount++;
+                        });
+                }
+            }
+        }))
+    });
+</script>

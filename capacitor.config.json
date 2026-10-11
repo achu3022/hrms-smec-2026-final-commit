@@ -1,0 +1,13 @@
+{
+  "appId": "com.smec.eims",
+  "appName": "SMEC HRMS",
+  "webDir": "public",
+  "server": {
+    "url": "https://hr.smeclabs.com/",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true
+  }
+}

@@ -32,7 +32,7 @@
                     <tr><th>Department</th><td>{{ $employee->departmentRel->name ?? $employee->department }}</td><th>Designation</th><td>{{ $employee->designationRel->name ?? $employee->designation }}</td></tr>
                     <tr><th>Company Email</th><td>{{ $employee->company_email }}</td><th>Personal Email</th><td>{{ $employee->personal_email }}</td></tr>
                     <tr><th>Personal Phone</th><td>{{ $employee->personal_phone }}</td><th>Office Phone</th><td>{{ $employee->office_phone }}</td></tr>
-                    <tr><th>DOB</th><td>{{ $employee->dob }}</td><th>Gender</th><td>{{ $employee->gender }}</td></tr>
+                    <tr><th>DOB</th><td>{{ $employee->dob ? \Carbon\Carbon::parse($employee->dob)->format('d-m-Y') : '' }}</td><th>Gender</th><td>{{ $employee->gender }}</td></tr>
                     <tr><th>Blood Group</th><td>{{ $employee->blood_group }}</td><th>Marital Status</th><td>{{ $employee->marital_status }}</td></tr>
                 </table>
             </div>
@@ -107,7 +107,7 @@
         <h5>Employment Details</h5>
         <table class="table table-bordered">
             <tr>
-                <th>Joining Date</th><td>{{ $employee->joining_date }}</td>
+                <th>Joining Date</th><td>{{ $employee->joining_date ? \Carbon\Carbon::parse($employee->joining_date)->format('d-m-Y') : '' }}</td>
                 <th>Employment Type</th><td>{{ $employee->employment_type }}</td>
             </tr>
             <tr>
@@ -146,8 +146,8 @@
             <tbody>
                 @foreach($employee->experience as $exp)
                 <tr>
-                    <td>{{ $exp->company }}</td><td>{{ $exp->designation }}</td><td>{{ $exp->from_date }}</td>
-                    <td>{{ $exp->to_date }}</td><td>{{ $exp->years }}</td>
+                    <td>{{ $exp->company }}</td><td>{{ $exp->designation }}</td><td>{{ $exp->from_date ? \Carbon\Carbon::parse($exp->from_date)->format('d-m-Y') : '' }}</td>
+                    <td>{{ $exp->to_date ? \Carbon\Carbon::parse($exp->to_date)->format('d-m-Y') : '' }}</td><td>{{ $exp->years }}</td>
                     <td>@if($exp->certificate) <a href="{{ Storage::url($exp->certificate) }}" target="_blank">View</a> @endif</td>
                 </tr>
                 @endforeach
@@ -166,7 +166,7 @@
                 @foreach($employee->certificates as $cert)
                 <tr>
                     <td>{{ $cert->certificate_name }}</td><td>{{ $cert->issued_by }}</td>
-                    <td>{{ $cert->issued_date }}</td><td>{{ $cert->expiry_date }}</td>
+                    <td>{{ $cert->issued_date ? \Carbon\Carbon::parse($cert->issued_date)->format('d-m-Y') : '' }}</td><td>{{ $cert->expiry_date ? \Carbon\Carbon::parse($cert->expiry_date)->format('d-m-Y') : '' }}</td>
                     <td>@if($cert->file) <a href="{{ Storage::url($cert->file) }}" target="_blank">View</a> @endif</td>
                 </tr>
                 @endforeach

@@ -1,0 +1,417 @@
+@extends('employee.portal.layout')
+
+@push('styles')
+<!-- jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<style>
+    /* Custom styling for jQuery UI Datepicker to match Tailwind form */
+    .ui-widget-header { background: #6366f1; color: white; border: none; }
+    .ui-state-default, .ui-widget-content .ui-state-default { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; border-radius: 4px; }
+    .ui-state-active, .ui-widget-content .ui-state-active { background: #4f46e5; border-color: #4f46e5; color: white; }
+    .ui-datepicker { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5em; }
+    .pf-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:24px; margin-bottom:24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+    .pf-section-title { font-size:.75rem; font-weight:800; color:#4f46e5; text-transform:uppercase; letter-spacing:.8px; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:8px; }
+    .pf-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:20px; }
+    @media(max-width:768px){ .pf-grid{ grid-template-columns:1fr; } }
+    .pf-field { display:flex; flex-direction:column; gap:6px; }
+    .form-label { font-size:.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:0; }
+    .form-control, .form-select { width:100%; border-radius:10px; border:1px solid #cbd5e1; padding:12px 16px; font-size:0.95rem; color:#334155; background-color:#f8fafc; transition:all 0.2s ease; outline:none; box-sizing: border-box;}
+    .form-control:focus, .form-select:focus { border-color:#6366f1; background-color:#fff; box-shadow:0 0 0 4px rgba(99,102,241,0.15); }
+    .form-control:disabled { background-color:#e2e8f0; color:#94a3b8; cursor:not-allowed; }
+    textarea.form-control { min-height: 100px; resize: vertical; }
+    .btn-save { background:linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; font-weight:700; padding:12px 28px; border-radius:10px; border:none; transition:all 0.3s ease; display:inline-flex; align-items:center; gap:8px; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6); }
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+    .file-input-wrapper input[type=file] { padding: 9px 16px; background: #fff; cursor: pointer; }
+    .invalid-feedback { color: #ef4444; font-size: 0.75rem; margin-top: 4px; font-weight: 500; }
+    .is-invalid { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+    .dynamic-row { border: 1px solid #eef0f2; padding: 20px; margin-bottom: 15px; border-radius: 12px; position: relative; background-color: #fafbfc; }
+    .remove-row { position: absolute; top: 15px; right: 15px; background: #fee2e2; color: #ef4444; border: none; border-radius: 50%; width: 32px; height: 32px; padding: 0; line-height: 32px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .remove-row:hover { background: #fca5a5; color: #b91c1c; }
+    .btn-add { background: #fff; color: #4f46e5; border: 1px solid #4f46e5; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+    .btn-add:hover { background: #e0e7ff; }
+</style>
+@endpush
+
+@section('content')
+<div class="mb-6 flex justify-between items-center flex-wrap gap-4">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-800">Edit Profile</h2>
+        <p class="text-sm text-slate-500 mt-1">Update your personal, contact, and employment information</p>
+    </div>
+    <a href="{{ route('employee.profile.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg shadow-sm border border-slate-200 transition-all no-underline">
+        <i class="fa-solid fa-arrow-left"></i> Back to Profile
+    </a>
+</div>
+
+<form action="{{ route('employee.profile.update') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-user"></i> Personal Details</div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $employee->name) }}" required>
+                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Employee ID <span class="text-xs normal-case font-normal text-slate-400 ml-1">(Unchangeable)</span></label>
+                <input type="text" class="form-control" value="{{ $employee->employee_id }}" disabled>
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Department <span class="text-xs normal-case font-normal text-slate-400 ml-1">(Unchangeable)</span></label>
+                <input type="text" class="form-control" value="{{ $employee->departmentRel->name ?? $employee->department ?? 'Not assigned' }}" disabled>
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Profile Photo <span class="text-xs normal-case font-normal text-slate-400 ml-1">(Max 2MB)</span></label>
+                <div class="file-input-wrapper">
+                    <input type="file" name="photo" class="form-control @error('photo') is-invalid @enderror" accept="image/jpeg,image/png,image/jpg">
+                </div>
+                @error('photo') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                @if($employee->photo)
+                    <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> Current photo exists. Uploading a new one will replace it.</div>
+                @endif
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Date of Birth</label>
+                <input type="text" name="dob" class="form-control datepicker" value="{{ old('dob', $employee->dob ? \Carbon\Carbon::parse($employee->dob)->format('d-m-Y') : '') }}" placeholder="DD-MM-YYYY" autocomplete="off">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-select">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {{ old('gender', $employee->gender) == 'Male' ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ old('gender', $employee->gender) == 'Female' ? 'selected' : '' }}>Female</option>
+                    <option value="Other" {{ old('gender', $employee->gender) == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Blood Group</label>
+                <select name="blood_group" class="form-select">
+                    <option value="">Select Blood Group</option>
+                    @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bg)
+                        <option value="{{ $bg }}" {{ old('blood_group', $employee->blood_group) == $bg ? 'selected' : '' }}>{{ $bg }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Marital Status</label>
+                <select name="marital_status" class="form-select">
+                    <option value="">Select</option>
+                    <option value="Single" {{ old('marital_status', $employee->marital_status) == 'Single' ? 'selected' : '' }}>Single</option>
+                    <option value="Married" {{ old('marital_status', $employee->marital_status) == 'Married' ? 'selected' : '' }}>Married</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-address-book"></i> Contact & Address</div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label class="form-label">Personal Email</label>
+                <input type="email" name="personal_email" class="form-control" value="{{ old('personal_email', $employee->personal_email) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Personal Phone</label>
+                <input type="text" name="personal_phone" class="form-control" value="{{ old('personal_phone', $employee->personal_phone) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Present Address</label>
+                <textarea name="present_address" class="form-control">{{ old('present_address', $employee->present_address) }}</textarea>
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Permanent Address</label>
+                <textarea name="permanent_address" class="form-control">{{ old('permanent_address', $employee->permanent_address) }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-phone-volume"></i> Emergency Contact</div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label class="form-label">Contact Person Name</label>
+                <input type="text" name="emergency_name" class="form-control" value="{{ old('emergency_name', $employee->emergency_name) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Relationship</label>
+                <input type="text" name="emergency_relation" class="form-control" value="{{ old('emergency_relation', $employee->emergency_relation) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Emergency Phone</label>
+                <input type="text" name="emergency_phone" class="form-control" value="{{ old('emergency_phone', $employee->emergency_phone) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Alternate Phone</label>
+                <input type="text" name="emergency_alt_phone" class="form-control" value="{{ old('emergency_alt_phone', $employee->emergency_alt_phone) }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Identity Details -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-id-card"></i> Identity Details</div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label class="form-label">Aadhaar Number</label>
+                <input type="text" name="aadhaar" class="form-control" value="{{ old('aadhaar', $employee->aadhaar) }}">
+                <label class="form-label mt-2">Upload Aadhaar (PDF/JPG)</label>
+                <input type="file" name="aadhaar_file" class="form-control" accept="image/*,.pdf">
+                @if($employee->aadhaar_file) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+            </div>
+            <div class="pf-field">
+                <label class="form-label">PAN Number</label>
+                <input type="text" name="pan" class="form-control" value="{{ old('pan', $employee->pan) }}">
+                <label class="form-label mt-2">Upload PAN (PDF/JPG)</label>
+                <input type="file" name="pan_file" class="form-control" accept="image/*,.pdf">
+                @if($employee->pan_file) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Passport Number</label>
+                <input type="text" name="passport" class="form-control" value="{{ old('passport', $employee->passport) }}">
+                <label class="form-label mt-2">Upload Passport (PDF/JPG)</label>
+                <input type="file" name="passport_file" class="form-control" accept="image/*,.pdf">
+                @if($employee->passport_file) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Driving License</label>
+                <input type="text" name="driving_license" class="form-control" value="{{ old('driving_license', $employee->driving_license) }}">
+                <label class="form-label mt-2">Upload License (PDF/JPG)</label>
+                <input type="file" name="license_file" class="form-control" accept="image/*,.pdf">
+                @if($employee->license_file) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Details -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-building-columns"></i> Bank Details</div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label class="form-label">Bank Name</label>
+                <input type="text" name="bank_name" class="form-control" value="{{ old('bank_name', $employee->bank_name) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Account Holder Name</label>
+                <input type="text" name="account_holder" class="form-control" value="{{ old('account_holder', $employee->account_holder) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Account Number</label>
+                <input type="text" name="account_number" class="form-control" value="{{ old('account_number', $employee->account_number) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">IFSC Code</label>
+                <input type="text" name="ifsc" class="form-control" value="{{ old('ifsc', $employee->ifsc) }}">
+            </div>
+            <div class="pf-field">
+                <label class="form-label">Branch</label>
+                <input type="text" name="branch" class="form-control" value="{{ old('branch', $employee->branch) }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Qualifications -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-graduation-cap"></i> Educational Qualifications</div>
+        <div id="educationContainer">
+            @foreach($employee->education as $index => $edu)
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <input type="hidden" name="education[{{$index}}][id]" value="{{ $edu->id }}">
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Qualification</label><input type="text" name="education[{{$index}}][qualification]" class="form-control" value="{{ $edu->qualification }}"></div>
+                    <div class="pf-field"><label class="form-label">Course</label><input type="text" name="education[{{$index}}][course]" class="form-control" value="{{ $edu->course }}"></div>
+                    <div class="pf-field"><label class="form-label">Institution</label><input type="text" name="education[{{$index}}][institution]" class="form-control" value="{{ $edu->institution }}"></div>
+                    <div class="pf-field"><label class="form-label">University / Board</label><input type="text" name="education[{{$index}}][university]" class="form-control" value="{{ $edu->university }}"></div>
+                    <div class="pf-field"><label class="form-label">Passing Year</label><input type="text" name="education[{{$index}}][year]" class="form-control" value="{{ $edu->year }}"></div>
+                    <div class="pf-field"><label class="form-label">% / CGPA</label><input type="text" name="education[{{$index}}][percentage]" class="form-control" value="{{ $edu->percentage }}"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="education[{{$index}}][certificate]" class="form-control" accept="image/*,.pdf">
+                    @if($edu->certificate) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <button type="button" class="btn-add mt-2" id="addEducation"><i class="fa-solid fa-plus"></i> Add Qualification</button>
+    </div>
+
+    <!-- Previous Experience -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-briefcase"></i> Previous Experience</div>
+        <div id="experienceContainer">
+            @foreach($employee->experience as $index => $exp)
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <input type="hidden" name="experience[{{$index}}][id]" value="{{ $exp->id }}">
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Company Name</label><input type="text" name="experience[{{$index}}][company]" class="form-control" value="{{ $exp->company }}"></div>
+                    <div class="pf-field"><label class="form-label">Designation</label><input type="text" name="experience[{{$index}}][designation]" class="form-control" value="{{ $exp->designation }}"></div>
+                    <div class="pf-field"><label class="form-label">From Date</label><input type="text" name="experience[{{$index}}][from_date]" class="form-control datepicker" value="{{ $exp->from_date ? \Carbon\Carbon::parse($exp->from_date)->format('d-m-Y') : '' }}" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">To Date</label><input type="text" name="experience[{{$index}}][to_date]" class="form-control datepicker" value="{{ $exp->to_date ? \Carbon\Carbon::parse($exp->to_date)->format('d-m-Y') : '' }}" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Total Years</label><input type="text" name="experience[{{$index}}][years]" class="form-control" value="{{ $exp->years }}"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="experience[{{$index}}][certificate]" class="form-control" accept="image/*,.pdf">
+                    @if($exp->certificate) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <button type="button" class="btn-add mt-2" id="addExperience"><i class="fa-solid fa-plus"></i> Add Experience</button>
+    </div>
+
+    <!-- Certifications -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-certificate"></i> Certifications</div>
+        <div id="certificateContainer">
+            @foreach($employee->certificates as $index => $cert)
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <input type="hidden" name="certificates[{{$index}}][id]" value="{{ $cert->id }}">
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Certificate Name</label><input type="text" name="certificates[{{$index}}][certificate_name]" class="form-control" value="{{ $cert->certificate_name }}"></div>
+                    <div class="pf-field"><label class="form-label">Issued By</label><input type="text" name="certificates[{{$index}}][issued_by]" class="form-control" value="{{ $cert->issued_by }}"></div>
+                    <div class="pf-field"><label class="form-label">Issued Date</label><input type="text" name="certificates[{{$index}}][issued_date]" class="form-control datepicker" value="{{ $cert->issued_date ? \Carbon\Carbon::parse($cert->issued_date)->format('d-m-Y') : '' }}" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Expiry Date</label><input type="text" name="certificates[{{$index}}][expiry_date]" class="form-control datepicker" value="{{ $cert->expiry_date ? \Carbon\Carbon::parse($cert->expiry_date)->format('d-m-Y') : '' }}" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="certificates[{{$index}}][file]" class="form-control" accept="image/*,.pdf">
+                    @if($cert->file) <div class="text-xs text-indigo-500 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> File exists</div> @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <button type="button" class="btn-add mt-2" id="addCertificate"><i class="fa-solid fa-plus"></i> Add Certificate</button>
+    </div>
+
+    <!-- Company Assets -->
+    <div class="pf-card">
+        <div class="pf-section-title"><i class="fa-solid fa-laptop"></i> Company Assets</div>
+        <div id="assetContainer">
+            @foreach($employee->assetAssignments as $index => $assignment)
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <input type="hidden" name="assets[{{$index}}][assignment_id]" value="{{ $assignment->id }}">
+                <input type="hidden" name="assets[{{$index}}][asset_id]" value="{{ $assignment->asset->id }}">
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Asset Name</label><input type="text" name="assets[{{$index}}][name]" class="form-control" value="{{ $assignment->asset->name }}"></div>
+                    <div class="pf-field"><label class="form-label">Type</label><input type="text" name="assets[{{$index}}][type]" class="form-control" value="{{ $assignment->asset->type }}" placeholder="Laptop, PC, Phone, etc."></div>
+                    <div class="pf-field"><label class="form-label">Serial Number</label><input type="text" name="assets[{{$index}}][serial_number]" class="form-control" value="{{ $assignment->asset->serial_number }}"></div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        <button type="button" class="btn-add mt-2" id="addAsset"><i class="fa-solid fa-plus"></i> Add Asset</button>
+    </div>
+
+
+
+    <div class="flex justify-end mb-8 mt-4">
+        <button type="submit" class="btn-save">
+            <i class="fa-solid fa-floppy-disk text-lg"></i> Save Profile
+        </button>
+    </div>
+</form>
+
+@push('scripts')
+<!-- jQuery and jQuery UI JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+    function initDatepicker() {
+        $('.datepicker').datepicker({
+            dateFormat: 'dd-mm-yy',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: "-100:+10"
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize existing datepickers
+        initDatepicker();
+        let eduIndex = {{ count($employee->education) > 0 ? max(array_keys($employee->education->toArray())) + 1 : 0 }};
+        let expIndex = {{ count($employee->experience) > 0 ? max(array_keys($employee->experience->toArray())) + 1 : 0 }};
+        let certIndex = {{ count($employee->certificates) > 0 ? max(array_keys($employee->certificates->toArray())) + 1 : 0 }};
+
+        document.getElementById('addEducation').addEventListener('click', function() {
+            let html = `
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Qualification</label><input type="text" name="education[${eduIndex}][qualification]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Course</label><input type="text" name="education[${eduIndex}][course]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Institution</label><input type="text" name="education[${eduIndex}][institution]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">University / Board</label><input type="text" name="education[${eduIndex}][university]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Passing Year</label><input type="text" name="education[${eduIndex}][year]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">% / CGPA</label><input type="text" name="education[${eduIndex}][percentage]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="education[${eduIndex}][certificate]" class="form-control" accept="image/*,.pdf"></div>
+                </div>
+            </div>`;
+            document.getElementById('educationContainer').insertAdjacentHTML('beforeend', html);
+            eduIndex++;
+        });
+
+        document.getElementById('addExperience').addEventListener('click', function() {
+            let html = `
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Company Name</label><input type="text" name="experience[${expIndex}][company]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Designation</label><input type="text" name="experience[${expIndex}][designation]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">From Date</label><input type="text" name="experience[${expIndex}][from_date]" class="form-control datepicker" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">To Date</label><input type="text" name="experience[${expIndex}][to_date]" class="form-control datepicker" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Total Years</label><input type="text" name="experience[${expIndex}][years]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="experience[${expIndex}][certificate]" class="form-control" accept="image/*,.pdf"></div>
+                </div>
+            </div>`;
+            document.getElementById('experienceContainer').insertAdjacentHTML('beforeend', html);
+            initDatepicker();
+            expIndex++;
+        });
+
+        document.getElementById('addCertificate').addEventListener('click', function() {
+            let html = `
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Certificate Name</label><input type="text" name="certificates[${certIndex}][certificate_name]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Issued By</label><input type="text" name="certificates[${certIndex}][issued_by]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Issued Date</label><input type="text" name="certificates[${certIndex}][issued_date]" class="form-control datepicker" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Expiry Date</label><input type="text" name="certificates[${certIndex}][expiry_date]" class="form-control datepicker" placeholder="DD-MM-YYYY" autocomplete="off"></div>
+                    <div class="pf-field"><label class="form-label">Upload Certificate</label><input type="file" name="certificates[${certIndex}][file]" class="form-control" accept="image/*,.pdf"></div>
+                </div>
+            </div>`;
+            document.getElementById('certificateContainer').insertAdjacentHTML('beforeend', html);
+            initDatepicker();
+            certIndex++;
+        });
+
+        let assetIndex = {{ count($employee->assetAssignments) > 0 ? max(array_keys($employee->assetAssignments->toArray())) + 1 : 0 }};
+        
+        document.getElementById('addAsset').addEventListener('click', function() {
+            let html = `
+            <div class="dynamic-row">
+                <button type="button" class="remove-row"><i class="fa-solid fa-times"></i></button>
+                <div class="pf-grid">
+                    <div class="pf-field"><label class="form-label">Asset Name</label><input type="text" name="assets[${assetIndex}][name]" class="form-control"></div>
+                    <div class="pf-field"><label class="form-label">Type</label><input type="text" name="assets[${assetIndex}][type]" class="form-control" placeholder="Laptop, PC, Phone, etc."></div>
+                    <div class="pf-field"><label class="form-label">Serial Number</label><input type="text" name="assets[${assetIndex}][serial_number]" class="form-control"></div>
+                </div>
+            </div>`;
+            document.getElementById('assetContainer').insertAdjacentHTML('beforeend', html);
+            assetIndex++;
+        });
+
+        document.addEventListener('click', function(e) {
+            if(e.target && (e.target.matches('.remove-row') || e.target.closest('.remove-row'))) {
+                e.target.closest('.dynamic-row').remove();
+            }
+        });
+
+
+    });
+</script>
+@endpush
+
+@endsection

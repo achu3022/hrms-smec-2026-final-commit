@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css">
     <!-- SweetAlert2 -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .form-container { max-width: 900px; margin: 40px auto; background: transparent; }
@@ -43,13 +45,21 @@
 </div>
 
 <div class="container py-4 form-container">
+    @if(auth()->guard('employee')->check())
+        <div class="d-flex justify-content-end mb-2">
+            <form action="{{ route('employee.logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa fa-sign-out-alt me-1"></i> Logout</button>
+            </form>
+        </div>
+    @endif
     <div class="logo-container">
         <img src="{{ asset('logo-new.webp') }}" alt="Company Logo">
-        <h3 class="mt-3 fw-bold text-dark">Employee Registration Form</h3>
-        <p class="text-muted">Please fill in your details accurately.</p>
+        <h3 class="mt-3 fw-bold text-dark">Employee Profile Completion</h3>
+        <p class="text-muted">Please complete your profile details to proceed.</p>
     </div>
     
-    <form id="employeeForm" action="{{ route('employee.store') }}" method="POST" enctype="multipart/form-data">
+    <form id="employeeForm" action="{{ route('employee.complete-profile.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         
         <!-- Personal Information -->
@@ -59,44 +69,44 @@
                 <div class="row g-4">
                     <div class="col-md-6">
                         <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control" required placeholder="John Doe">
+                        <input type="text" name="name" class="form-control" placeholder="John Doe" value="{{ $employee ? $employee->name : '' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Employee ID <span class="text-danger">*</span></label>
-                        <input type="text" name="employee_id" class="form-control" required placeholder="EMP-001">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" name="employee_id" class="form-control" placeholder="SA00000" value="{{ $employee ? $employee->employee_id : '' }}" readonly style="background-color: #e9ecef;">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Department <span class="text-danger">*</span></label>
-                        <select name="department_id" class="form-select" required>
+                        <label class="form-label">Department</label>
+                        <select name="department_id" class="form-select" style="pointer-events: none; background-color: #e9ecef;" tabindex="-1">
                             <option value="">Select Department</option>
                             @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                <option value="{{ $dept->id }}" {{ ($employee && $employee->department_id == $dept->id) ? 'selected' : '' }}>{{ $dept->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Designation <span class="text-danger">*</span></label>
-                        <input type="text" name="designation" class="form-control" required placeholder="e.g. Software Engineer">
+                        <input type="text" name="designation" class="form-control" placeholder="e.g. Software Engineer" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Company Email <span class="text-danger">*</span></label>
-                        <input type="email" name="company_email" class="form-control" required placeholder="john@company.com">
+                        <label class="form-label">Company Email (Optional)</label>
+                        <input type="email" name="company_email" class="form-control" placeholder="john@company.com">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Personal Email</label>
-                        <input type="email" name="personal_email" class="form-control" placeholder="john.doe@gmail.com">
+                        <label class="form-label">Personal Email <span class="text-danger">*</span></label>
+                        <input type="email" name="personal_email" class="form-control" placeholder="john.doe@gmail.com" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Personal Mobile <span class="text-danger">*</span></label>
-                        <input type="text" name="personal_phone" class="form-control" required placeholder="+1 234 567 8900">
+                        <input type="text" name="personal_phone" class="form-control" placeholder="+1 234 567 8900" value="{{ $employee ? $employee->personal_phone : '' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Office Mobile</label>
+                        <label class="form-label">Office Mobile (Optional)</label>
                         <input type="text" name="office_phone" class="form-control" placeholder="+1 234 567 8901">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                        <input type="date" name="dob" class="form-control" required>
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="dob" class="form-control" value="{{ $employee ? $employee->dob : '' }}" readonly style="background-color: #e9ecef;">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Gender <span class="text-danger">*</span></label>
@@ -122,16 +132,16 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Marital Status</label>
-                        <select name="marital_status" class="form-select">
+                        <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+                        <select name="marital_status" class="form-select" required>
                             <option value="">Select</option>
                             <option value="Single">Single</option>
                             <option value="Married">Married</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Employee Photo (Max 150KB, 3.5cm x 4.5cm) <span class="text-danger">*</span></label>
-                        <input type="file" name="photo" class="form-control" accept="image/*" required>
+                        <label class="form-label">Employee Photo (Max 200KB, 3.5cm x 4.5cm) <span class="text-danger">*</span></label>
+                        <input type="file" name="photo" class="form-control" accept="image/*" {{ ($employee && $employee->photo) ? '' : 'required' }}>
                     </div>
                 </div>
             </div>
@@ -144,19 +154,19 @@
                 <div class="row g-4">
                     <!-- Present Address -->
                     <div class="col-md-6">
-                        <label class="form-label">Present Address</label>
-                        <textarea name="present_address" id="present_address" class="form-control" rows="4" placeholder="House, Street, City, State, PIN..."></textarea>
+                        <label class="form-label">Present Address <span class="text-danger">*</span></label>
+                        <textarea name="present_address" id="present_address" class="form-control" rows="4" placeholder="House, Street, City, State, PIN..." required></textarea>
                     </div>
                     <!-- Permanent Address -->
                     <div class="col-md-6">
                         <label class="form-label d-flex justify-content-between">
-                            Permanent Address
+                            <span>Permanent Address <span class="text-danger">*</span></span>
                             <div class="form-check ms-3 fw-normal">
                                 <input class="form-check-input" type="checkbox" id="sameAddress">
                                 <label class="form-check-label text-muted" for="sameAddress">Same as Present</label>
                             </div>
                         </label>
-                        <textarea name="permanent_address" id="permanent_address" class="form-control" rows="4" placeholder="House, Street, City, State, PIN..."></textarea>
+                        <textarea name="permanent_address" id="permanent_address" class="form-control" rows="4" placeholder="House, Street, City, State, PIN..." required></textarea>
                     </div>
                 </div>
             </div>
@@ -190,7 +200,7 @@
                         <input type="text" name="emergency_phone" class="form-control" required>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <label class="form-label">Alternate Mobile</label>
+                        <label class="form-label">Alternate Mobile (Optional)</label>
                         <input type="text" name="emergency_alt_phone" class="form-control">
                     </div>
 
@@ -198,12 +208,14 @@
                     <div class="col-md-6">
                         <label class="form-label">Aadhaar Number <span class="text-danger">*</span></label>
                         <input type="text" name="aadhaar" class="form-control mb-2" required>
-                        <label class="form-label text-muted small">Upload Aadhaar (PDF/JPG) <span class="text-danger">*</span></label>
-                        <input type="file" name="aadhaar_file" class="form-control" required>
+                        <label class="form-label text-muted small">Upload Aadhaar (PDF/JPG) (Optional)</label>
+                        <input type="file" name="aadhaar_file" class="form-control" accept="image/*,.pdf">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">PAN Number (if available)</label>
+                        <label class="form-label">PAN Number (Optional)</label>
                         <input type="text" name="pan" class="form-control mb-2">
+                        <label class="form-label text-muted small">Upload PAN (PDF/JPG) (Optional)</label>
+                        <input type="file" name="pan_file" class="form-control" accept="image/*,.pdf">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Passport Number (if available)</label>
@@ -240,27 +252,27 @@
                         <input type="text" name="ifsc" class="form-control" required>
                     </div>
                     <div class="col-md-4 col-sm-6">
-                        <label class="form-label">Branch</label>
-                        <input type="text" name="branch" class="form-control">
+                        <label class="form-label">Branch <span class="text-danger">*</span></label>
+                        <input type="text" name="branch" class="form-control" required>
                     </div>
 
 
-                    <div class="col-md-12"><h6 class="section-title">Employment Details</h6></div>
+                    <div class="col-md-12"><h6 class="section-title">Employment Details <span class="text-danger">*</span></h6></div>
                     <div class="col-md-3 col-sm-6">
-                        <label class="form-label">Date of Joining</label>
-                        <input type="date" name="joining_date" class="form-control">
+                        <label class="form-label">Date of Joining <span class="text-danger">*</span></label>
+                        <input type="date" name="joining_date" class="form-control" required>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <label class="form-label">Employment Type</label>
-                        <input type="text" name="employment_type" class="form-control" placeholder="e.g. Full-time">
+                        <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+                        <input type="text" name="employment_type" class="form-control" placeholder="e.g. Full-time" required>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <label class="form-label">Reporting Manager</label>
-                        <input type="text" name="reporting_manager" class="form-control">
+                        <label class="form-label">Reporting Manager <span class="text-danger">*</span></label>
+                        <input type="text" name="reporting_manager" class="form-control" required>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <label class="form-label">Work Location (Branch)</label>
-                        <select name="branch_id" class="form-select">
+                        <label class="form-label">Work Location (Branch) <span class="text-danger">*</span></label>
+                        <select name="branch_id" class="form-select" required>
                             <option value="">Select Branch</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -274,7 +286,7 @@
         <!-- Educational Qualifications -->
         <div class="card">
             <div class="card-header">
-                <h5><i class="fa-solid fa-graduation-cap"></i> Educational Qualifications <span class="text-danger">*</span></h5>
+                <h5><i class="fa-solid fa-graduation-cap"></i> Educational Qualifications </h5>
                 <p class="text-muted small mb-0 mt-1">Please enter at least your highest qualification.</p>
             </div>
             <div class="card-body">
@@ -349,10 +361,43 @@
             </div>
         </div>
 
-        <div class="text-center mt-5 mb-5">
+        <div class="card mt-4 mb-4" style="background-color: #f8f9fa; border-left: 4px solid #198754;">
+            <div class="card-body py-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="agreed_to_terms" value="1" id="agreeTerms">
+                    <label class="form-check-label fw-bold text-dark" for="agreeTerms">
+                        I have read and agree to the <a href="{{ route('terms') }}" target="_blank" class="text-primary text-decoration-underline">SMECLABS Human Resource Management System (HRMS) Terms and Conditions</a>. I confirm that all information and documents submitted are true, complete, and accurate to the best of my knowledge. 
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mb-5">
+            <button type="button" class="btn btn-secondary btn-submit px-5 me-3" onclick="if(window.self !== window.top) { window.parent.postMessage('profile_skipped', '*'); } else { window.location.href='{{ route('employee.dashboard') }}'; }">Skip this form</button>
             <button type="submit" class="btn btn-success btn-submit px-5"><i class="fa-solid fa-paper-plane me-2"></i> Submit Information</button>
         </div>
     </form>
+</div>
+
+<!-- Crop Modal -->
+<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cropModalLabel"><i class="fa-solid fa-crop-simple"></i> Crop Image</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center" style="background-color: #f8f9fa;">
+        <div class="img-container" style="max-height: 400px; display: flex; justify-content: center; align-items: center;">
+          <img id="imageToCrop" src="" alt="Picture" style="max-width: 100%; max-height: 400px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="cropImageBtn">Crop & Save</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- jQuery & Bootstrap -->
@@ -361,32 +406,54 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+<!-- Cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
 $(document).ready(function() {
     
     // Initialize jQuery UI Datepicker for all date fields
-    $('input[type="date"]').each(function() {
-        var $this = $(this);
-        var dateValue = $this.val();
-        
-        // Change type to text for datepicker
-        $this.attr('type', 'text');
-        
-        // Initialize datepicker
-        $this.datepicker({
-            dateFormat: 'yy-mm-dd',
-            changeMonth: true,
-            changeYear: true,
-            yearRange: '1950:2030',
-            showButtonPanel: true
+    function initDatepickers(context) {
+        $(context).find('input[type="date"]').each(function() {
+            var $this = $(this);
+            var dateValue = $this.val();
+            
+            // Change type to text for datepicker
+            $this.attr('type', 'text');
+            
+            // Setup hidden field for submission
+            var originalName = $this.attr('name');
+            $this.removeAttr('name');
+            var $hidden = $('<input type="hidden" name="' + originalName + '">');
+            $this.after($hidden);
+            
+            // Initialize datepicker
+            if (!$this.hasClass('hasDatepicker')) {
+                $this.datepicker({
+                    dateFormat: 'dd-mm-yy',
+                    altField: $hidden,
+                    altFormat: 'yy-mm-dd',
+                    changeMonth: true,
+                    changeYear: true,
+                    yearRange: '1950:2030',
+                    showButtonPanel: true
+                });
+            }
+            
+            // Restore value if exists
+            if (dateValue) {
+                // If the value is yy-mm-dd from DB, parse it and set datepicker
+                // Native date fields have yy-mm-dd
+                var parts = dateValue.split('-');
+                if (parts.length === 3) {
+                    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+                    $this.datepicker('setDate', d);
+                }
+            }
         });
-        
-        // Restore value if exists
-        if (dateValue) {
-            $this.val(dateValue);
-        }
-    });
+    }
+
+    initDatepickers(document);
     
     // Same Address Checkbox
     $('#sameAddress').change(function() {
@@ -405,8 +472,8 @@ $(document).ready(function() {
             <button type="button" class="btn btn-sm btn-danger remove-row"><i class="fa fa-times"></i></button>
             <div class="row g-3 mb-2">
                 <div class="col-md-4">
-                    <label class="form-label small text-muted">Qualification <span class="text-danger">*</span></label>
-                    <input type="text" name="education[${eduIndex}][qualification]" class="form-control form-control-sm" required placeholder="e.g. Bachelor's Degree">
+                    <label class="form-label small text-muted">Qualification </label>
+                    <input type="text" name="education[${eduIndex}][qualification]" class="form-control form-control-sm" placeholder="e.g. Bachelor's Degree">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label small text-muted">Course</label>
@@ -431,8 +498,8 @@ $(document).ready(function() {
                     <input type="text" name="education[${eduIndex}][percentage]" class="form-control form-control-sm" placeholder="e.g. 85%">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label small text-muted">Upload Certificate <span class="text-danger">*</span></label>
-                    <input type="file" name="education[${eduIndex}][certificate]" class="form-control form-control-sm" required>
+                    <label class="form-label small text-muted">Upload Certificate (Optional)</label>
+                    <input type="file" name="education[${eduIndex}][certificate]" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
             </div>
         </div>`;
@@ -471,11 +538,12 @@ $(document).ready(function() {
                 </div>
                 <div class="col-md-4">
                     <label class="form-label small text-muted">Upload Certificate (Optional)</label>
-                    <input type="file" name="experience[${expIndex}][certificate]" class="form-control form-control-sm">
+                    <input type="file" name="experience[${expIndex}][certificate]" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
             </div>
         </div>`;
         $('#experienceContainer').append(html);
+        initDatepickers($('#experienceContainer').children().last());
         expIndex++;
     });
 
@@ -489,9 +557,10 @@ $(document).ready(function() {
             <div class="col-md-6 col-lg-3"><label class="form-label small text-muted">Issued By</label><input type="text" name="certificates[${certIndex}][issued_by]" class="form-control form-control-sm"></div>
             <div class="col-md-4 col-lg-2"><label class="form-label small text-muted">Issued Date</label><input type="date" name="certificates[${certIndex}][issued_date]" class="form-control form-control-sm"></div>
             <div class="col-md-4 col-lg-2"><label class="form-label small text-muted">Expiry Date</label><input type="date" name="certificates[${certIndex}][expiry_date]" class="form-control form-control-sm"></div>
-            <div class="col-md-4 col-lg-2"><label class="form-label small text-muted">File</label><input type="file" name="certificates[${certIndex}][file]" class="form-control form-control-sm"></div>
+            <div class="col-md-4 col-lg-2"><label class="form-label small text-muted">File</label><input type="file" name="certificates[${certIndex}][file]" class="form-control form-control-sm" accept="image/*,.pdf"></div>
         </div>`;
         $('#certificateContainer').append(html);
+        initDatepickers($('#certificateContainer').children().last());
         certIndex++;
     });
 
@@ -522,6 +591,120 @@ $(document).ready(function() {
             $('textarea[name="provided_assets[other_details]"]').val('');
         }
     });
+
+    // Image Cropping Logic
+    let currentFileInput;
+    let cropper;
+    let originalFileName = 'image.jpg';
+    const cropModal = new bootstrap.Modal(document.getElementById('cropModal'));
+    const imageToCrop = document.getElementById('imageToCrop');
+
+    $(document).on('change', 'input[name="photo"]', function(e) {
+        const file = e.target.files[0];
+        if (file && file.type.match('image.*')) {
+            currentFileInput = e.target;
+            originalFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imageToCrop.src = event.target.result;
+                cropModal.show();
+            };
+            reader.readAsDataURL(file);
+            
+            // Clear the input value so if they cancel, they can select it again
+            $(this).val('');
+        }
+    });
+
+    $('#cropModal').on('shown.bs.modal', function () {
+        cropper = new Cropper(imageToCrop, {
+            viewMode: 2,
+            autoCropArea: 1,
+            responsive: true,
+        });
+    }).on('hidden.bs.modal', function () {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        imageToCrop.src = '';
+    });
+
+    $('#cropImageBtn').click(function() {
+        if (!cropper) return;
+        
+        // Show loading state on button
+        const btn = $(this);
+        const originalText = btn.html();
+        btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...').prop('disabled', true);
+        
+        const canvas = cropper.getCroppedCanvas();
+        
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                btn.html(originalText).prop('disabled', false);
+                Swal.fire('Error', 'Could not crop image.', 'error');
+                return;
+            }
+            
+            let sizeKb = blob.size / 1024;
+            
+            if (sizeKb > 200) {
+                // Try to compress it
+                canvas.toBlob(function(compressedBlob) {
+                    let compSizeKb = compressedBlob.size / 1024;
+                    if (compSizeKb > 200) {
+                        btn.html(originalText).prop('disabled', false);
+                        Swal.fire({
+                            title: 'Image Too Large',
+                            text: 'Cropped image is ' + compSizeKb.toFixed(2) + ' KB even after compression. Maximum allowed size is 200 KB.',
+                            icon: 'warning'
+                        });
+                    } else {
+                        finalizeCrop(compressedBlob, btn, originalText);
+                    }
+                }, 'image/jpeg', 0.6); // Lower quality to compress
+            } else {
+                finalizeCrop(blob, btn, originalText);
+            }
+        }, 'image/jpeg', 0.9);
+    });
+
+    function finalizeCrop(blob, btn, originalText) {
+        // Create a new File object
+        const ext = originalFileName.split('.').pop().toLowerCase();
+        let fileName = originalFileName;
+        if (!['jpg', 'jpeg'].includes(ext)) {
+             fileName = fileName.replace('.' + ext, '.jpg');
+        }
+        
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        
+        // Set the file to the input using DataTransfer
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        
+        if (currentFileInput) {
+            currentFileInput.files = dataTransfer.files;
+            
+            // Add a visual indicator to the input's parent or near it
+            let $input = $(currentFileInput);
+            $input.siblings('.crop-success-msg').remove();
+            $input.after('<div class="crop-success-msg text-success small mt-1"><i class="fa-solid fa-check-circle"></i> Image ready (' + (blob.size / 1024).toFixed(2) + ' KB)</div>');
+        }
+        
+        btn.html(originalText).prop('disabled', false);
+        cropModal.hide();
+        
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Image cropped successfully (' + (blob.size / 1024).toFixed(2) + ' KB)',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    }
 
     // Ajax Form Submit
     $('#employeeForm').on('submit', function(e) {
@@ -554,8 +737,18 @@ $(document).ready(function() {
                             confirmButton: 'btn btn-success px-4'
                         }
                     }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.reload();
+                        if (response.redirect) {
+                            if(window.self !== window.top) {
+                                window.parent.postMessage('profile_completed', '*');
+                            } else {
+                                window.location.href = response.redirect;
+                            }
+                        } else {
+                            if(window.self !== window.top) {
+                                window.parent.postMessage('profile_completed', '*');
+                            } else {
+                                window.location.reload();
+                            }
                         }
                     });
                 }

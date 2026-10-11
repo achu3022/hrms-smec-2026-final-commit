@@ -19,20 +19,10 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2 text-rose-500" />
         </div>
 
-        <!-- Remember Me & Forgot Password -->
-        <div class="flex items-center justify-between mt-4">
-            <div class="flex items-center">
-                <input id="remember_me" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" name="remember">
-                <label for="remember_me" class="ml-2 block text-sm text-slate-600 font-medium">{{ __('Remember me') }}</label>
-            </div>
-
-            @if (Route::has('password.request'))
-                <div class="text-sm">
-                    <a class="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors" href="{{ route('password.request') }}">
-                        {{ __('Forgot password?') }}
-                    </a>
-                </div>
-            @endif
+        <!-- Remember Me -->
+        <div class="flex items-center mt-4">
+            <input id="remember_me" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" name="remember">
+            <label for="remember_me" class="ml-2 block text-sm text-slate-600 font-medium">{{ __('Remember me') }}</label>
         </div>
 
         <div class="pt-2">
@@ -42,6 +32,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
             </button>
+        </div>
+        <div class="mt-6 text-center border-t border-slate-200 pt-4">
+            <a href="{{ route('employee.login') }}" class="text-sm font-medium text-slate-500 hover:text-slate-700">
+                &larr; Back to Employee Login
+            </a>
         </div>
     </form>
 </x-guest-layout>

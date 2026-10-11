@@ -158,7 +158,12 @@
         @endif
     </div>
     <div class="profile-info">
-        <h2 class="mb-1 fw-bold text-white">{{ $employee->name }}</h2>
+        <h2 class="mb-1 fw-bold text-white">
+            {{ $employee->name }}
+            @if(!$employee->checkIsProfileComplete())
+                <span class="badge bg-warning text-dark fs-6 ms-2" title="Missing: {{ implode(', ', $employee->getMissingProfileFields()) }}"><i class="fa fa-exclamation-triangle me-1"></i> Incomplete Profile</span>
+            @endif
+        </h2>
         <p class="mb-3 fs-5 text-white-50"><i class="fa fa-id-badge me-2"></i>{{ $employee->employee_id }} &nbsp;|&nbsp; <i class="fa fa-briefcase me-2"></i>{{ $employee->designationRel->name ?? $employee->designation }}</p>
         <div class="d-flex flex-wrap gap-2">
             <a href="mailto:{{ $employee->company_email }}" class="modal-action-btn btn-modal-email">
@@ -212,7 +217,7 @@
                         <div class="row">
                             <div class="col-sm-6"><div class="info-label">Department</div><div class="info-value">{{ $employee->departmentRel->name ?? $employee->department }}</div></div>
                             <div class="col-sm-6"><div class="info-label">Status</div><div class="info-value"><span class="badge {{ $employee->status == 'Active' ? 'bg-success' : 'bg-danger' }} badge-status">{{ $employee->status }}</span></div></div>
-                            <div class="col-sm-6"><div class="info-label">Joining Date</div><div class="info-value">{{ $employee->joining_date ?? 'N/A' }}</div></div>
+                            <div class="col-sm-6"><div class="info-label">Joining Date</div><div class="info-value">{{ $employee->joining_date ? \Carbon\Carbon::parse($employee->joining_date)->format('d-m-Y') : 'N/A' }}</div></div>
                             <div class="col-sm-6"><div class="info-label">Employment Type</div><div class="info-value">{{ $employee->employment_type ?? 'N/A' }}</div></div>
                             <div class="col-sm-6"><div class="info-label">Reporting Manager</div><div class="info-value">{{ $employee->reporting_manager ?? 'N/A' }}</div></div>
                             <div class="col-sm-6"><div class="info-label">Work Location</div><div class="info-value">{{ $employee->work_location ?? 'N/A' }}</div></div>
@@ -234,12 +239,23 @@
                     <div class="info-card">
                         <div class="info-card-title"><i class="fa fa-user"></i> Personal Information</div>
                         <div class="row">
-                            <div class="col-md-3 col-sm-6"><div class="info-label">DOB</div><div class="info-value">{{ $employee->dob ?? 'N/A' }}</div></div>
+                            <div class="col-md-3 col-sm-6"><div class="info-label">DOB</div><div class="info-value">{{ $employee->dob ? \Carbon\Carbon::parse($employee->dob)->format('d-m-Y') : 'N/A' }}</div></div>
                             <div class="col-md-3 col-sm-6"><div class="info-label">Gender</div><div class="info-value">{{ $employee->gender ?? 'N/A' }}</div></div>
                             <div class="col-md-3 col-sm-6"><div class="info-label">Blood Group</div><div class="info-value">{{ $employee->blood_group ?? 'N/A' }}</div></div>
                             <div class="col-md-3 col-sm-6"><div class="info-label">Marital Status</div><div class="info-value">{{ $employee->marital_status ?? 'N/A' }}</div></div>
                             <div class="col-md-6"><div class="info-label">Present Address</div><div class="info-value">{{ $employee->present_address ?? 'N/A' }}</div></div>
                             <div class="col-md-6"><div class="info-label">Permanent Address</div><div class="info-value">{{ $employee->permanent_address ?? 'N/A' }}</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="info-card">
+                        <div class="info-card-title"><i class="fa fa-heartbeat"></i> Emergency Contact</div>
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6"><div class="info-label">Name</div><div class="info-value">{{ $employee->emergency_name ?? 'N/A' }}</div></div>
+                            <div class="col-md-3 col-sm-6"><div class="info-label">Relation</div><div class="info-value">{{ $employee->emergency_relation ?? 'N/A' }}</div></div>
+                            <div class="col-md-3 col-sm-6"><div class="info-label">Phone</div><div class="info-value">{{ $employee->emergency_phone ?? 'N/A' }}</div></div>
+                            <div class="col-md-3 col-sm-6"><div class="info-label">Alt Phone</div><div class="info-value">{{ $employee->emergency_alt_phone ?? 'N/A' }}</div></div>
                         </div>
                     </div>
                 </div>
@@ -338,7 +354,7 @@
                             <tr>
                                 <td><span class="fw-bold text-dark">{{ $exp->company }}</span></td>
                                 <td>{{ $exp->designation }}</td>
-                                <td>{{ $exp->from_date }} <i class="fa fa-arrow-right mx-1 text-muted fs-7"></i> {{ $exp->to_date }}</td>
+                                <td>{{ $exp->from_date ? \Carbon\Carbon::parse($exp->from_date)->format('d-m-Y') : '' }} <i class="fa fa-arrow-right mx-1 text-muted fs-7"></i> {{ $exp->to_date ? \Carbon\Carbon::parse($exp->to_date)->format('d-m-Y') : '' }}</td>
                                 <td><span class="badge bg-light text-dark border">{{ $exp->years }} yrs</span></td>
                                 <td class="text-end">@if($exp->certificate) <a href="{{ Storage::url($exp->certificate) }}" target="_blank" class="btn btn-sm btn-light text-primary py-1"><i class="fa fa-eye"></i> View</a> @else <span class="text-muted">-</span> @endif</td>
                             </tr>
@@ -364,8 +380,8 @@
                             <tr>
                                 <td><span class="fw-bold text-dark">{{ $cert->certificate_name }}</span></td>
                                 <td>{{ $cert->issued_by }}</td>
-                                <td>{{ $cert->issued_date }}</td>
-                                <td>{{ $cert->expiry_date }}</td>
+                                <td>{{ $cert->issued_date ? \Carbon\Carbon::parse($cert->issued_date)->format('d-m-Y') : '' }}</td>
+                                <td>{{ $cert->expiry_date ? \Carbon\Carbon::parse($cert->expiry_date)->format('d-m-Y') : '' }}</td>
                                 <td class="text-end">@if($cert->file) <a href="{{ Storage::url($cert->file) }}" target="_blank" class="btn btn-sm btn-light text-primary py-1"><i class="fa fa-eye"></i> View</a> @else <span class="text-muted">-</span> @endif</td>
                             </tr>
                             @endforeach
@@ -382,11 +398,17 @@
         <div class="tab-pane fade" id="assets" role="tabpanel">
 
             {{-- Provided Assets from Registration --}}
-            @if($employee->provided_assets && count(array_filter($employee->provided_assets)))
+            @php
+                $providedAssets = is_array($employee->provided_assets) 
+                    ? $employee->provided_assets 
+                    : (is_string($employee->provided_assets) ? json_decode($employee->provided_assets, true) : []);
+                $providedAssets = is_array($providedAssets) ? $providedAssets : [];
+            @endphp
+            @if(count(array_filter($providedAssets)))
             <div class="info-card mb-4">
                 <div class="info-card-title"><i class="fa fa-box-open"></i> Assets Provided at Joining</div>
                 <div class="d-flex flex-wrap gap-2">
-                    @foreach($employee->provided_assets as $key => $value)
+                    @foreach($providedAssets as $key => $value)
                         @if($value && $value !== 'null' && $key !== 'sim_number' && $key !== 'other_details')
                             <span class="badge px-3 py-2 fs-6" style="background:linear-gradient(135deg,#2f3092,#0070bc);color:white;border-radius:8px;">
                                 <i class="fa fa-check-circle me-1"></i>
@@ -394,14 +416,14 @@
                             </span>
                         @endif
                     @endforeach
-                    @if(!empty($employee->provided_assets['sim_number']))
+                    @if(!empty($providedAssets['sim_number']))
                         <span class="badge px-3 py-2 fs-6" style="background:linear-gradient(135deg,#0070bc,#00aa9e);color:white;border-radius:8px;">
-                            <i class="fa fa-sim-card me-1"></i> SIM: {{ $employee->provided_assets['sim_number'] }}
+                            <i class="fa fa-sim-card me-1"></i> SIM: {{ $providedAssets['sim_number'] }}
                         </span>
                     @endif
-                    @if(!empty($employee->provided_assets['other_details']))
+                    @if(!empty($providedAssets['other_details']))
                         <span class="badge px-3 py-2 fs-6 bg-secondary">
-                            <i class="fa fa-info-circle me-1"></i> {{ $employee->provided_assets['other_details'] }}
+                            <i class="fa fa-info-circle me-1"></i> {{ $providedAssets['other_details'] }}
                         </span>
                     @endif
                 </div>
@@ -434,12 +456,12 @@
                                     </span>
                                 </td>
                                 <td><code>{{ $assignment->asset->serial_number ?? 'N/A' }}</code></td>
-                                <td>{{ $assignment->assigned_date ?? 'N/A' }}</td>
+                                <td>{{ $assignment->assigned_date ? \Carbon\Carbon::parse($assignment->assigned_date)->format('d-m-Y') : 'N/A' }}</td>
                                 <td>{{ $assignment->condition_given ?? '—' }}</td>
                                 <td>
                                     @if($assignment->returned_date)
                                         <span class="badge bg-secondary">
-                                            <i class="fa fa-undo me-1"></i>Returned on {{ $assignment->returned_date }}
+                                            <i class="fa fa-undo me-1"></i>Returned on {{ \Carbon\Carbon::parse($assignment->returned_date)->format('d-m-Y') }}
                                         </span>
                                     @else
                                         <span class="badge bg-success">

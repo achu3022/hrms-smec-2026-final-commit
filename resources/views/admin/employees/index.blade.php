@@ -6,9 +6,14 @@
         <h4 class="mb-1 text-primary"><i class="fa fa-users me-2"></i>Employee Directory</h4>
         <p class="mb-0 text-muted">Manage your team members</p>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importModal">
-        <i class="fa fa-upload me-2"></i> Import Excel
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+            <i class="fa fa-user-plus me-2"></i> Add Employee
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="fa fa-upload me-2"></i> Import Excel
+        </button>
+    </div>
 </div>
 
 <div class="card mb-4 border-0 shadow-sm">
@@ -64,7 +69,15 @@
                     <p class="ec-name">{{ $employee->name }}</p>
                     <p class="ec-empid"><i class="fa fa-id-badge me-1"></i>{{ $employee->employee_id }}</p>
                     <p class="ec-dept"><i class="fa fa-building me-1"></i>{{ Str::limit($employee->departmentRel->name ?? $employee->department ?? 'N/A', 18) }}</p>
-                    <p class="ec-role"><i class="fa fa-briefcase me-1"></i>{{ Str::limit($employee->designationRel->name ?? $employee->designation ?? 'N/A', 18) }}</p>
+                    <p class="ec-role">
+                        <i class="fa fa-briefcase me-1"></i>{{ Str::limit($employee->designationRel->name ?? $employee->designation ?? 'N/A', 18) }}
+                        @if($employee->is_teamleader)
+                            <span class="badge bg-warning text-dark ms-1" style="font-size: 0.6rem;">Teamleader</span>
+                        @endif
+                        @if(!$employee->checkIsProfileComplete())
+                            <span class="badge bg-danger text-white ms-1" style="font-size: 0.6rem;" title="Missing: {{ implode(', ', $employee->getMissingProfileFields()) }}">Incomplete Profile</span>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>
@@ -99,12 +112,87 @@
                 <input type="file" name="file" class="form-control" required accept=".xlsx,.xls,.csv">
             </div>
             <div class="alert alert-info mb-0">
-                <small><strong>Required columns:</strong> employee_id, name, company_email, department, designation</small>
+                <small><strong>Required columns:</strong> employee_id, full_name, department, dob, personal_phone</small>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="submit" class="btn btn-primary"><i class="fa fa-upload me-1"></i>Import</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Employee Modal -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="{{ route('admin.employees.store') }}" method="POST">
+          @csrf
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fa fa-user-plus me-2"></i>Add Temporary Employee Login</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-info py-2">
+                <small><i class="fa fa-info-circle me-1"></i> The employee's password will be their DOB in <strong>DDMMYYYY</strong> format.</small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Employee ID <span class="text-danger">*</span></label>
+                <input type="text" name="employee_id" class="form-control @error('employee_id') is-invalid @enderror" value="{{ old('employee_id') }}" required placeholder="SA00000">
+                @error('employee_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required placeholder="John Doe">
+                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Department <span class="text-danger">*</span></label>
+                <select name="department_id" class="form-select @error('department_id') is-invalid @enderror" required>
+                    <option value="">Select Department</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+                @error('department_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Shift <span class="text-danger">*</span></label>
+                <select name="shift" id="create_shift_select" class="form-select @error('shift') is-invalid @enderror" required onchange="toggleCustomShiftInput('create')">
+                    <option value="9:00 AM - 6:00 PM" {{ old('shift', '9:00 AM - 6:00 PM') == '9:00 AM - 6:00 PM' ? 'selected' : '' }}>9:00 AM - 6:00 PM (Standard)</option>
+                    <option value="8:00 AM - 5:00 PM" {{ old('shift') == '8:00 AM - 5:00 PM' ? 'selected' : '' }}>8:00 AM - 5:00 PM (Early)</option>
+                    <option value="10:00 AM - 7:00 PM" {{ old('shift') == '10:00 AM - 7:00 PM' ? 'selected' : '' }}>10:00 AM - 7:00 PM (Late)</option>
+                    <option value="11:00 AM - 8:00 PM" {{ old('shift') == '11:00 AM - 8:00 PM' ? 'selected' : '' }}>11:00 AM - 8:00 PM (Evening)</option>
+                    <option value="custom" {{ old('shift') == 'custom' ? 'selected' : '' }}>Custom Time Shift...</option>
+                </select>
+                @error('shift') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="row mb-3 {{ old('shift') == 'custom' ? '' : 'd-none' }}" id="create_custom_shift_container">
+                <div class="col-6">
+                    <label class="form-label text-muted small">Shift Start Time</label>
+                    <input type="time" name="custom_shift_start" id="create_custom_shift_start" class="form-control" value="{{ old('custom_shift_start', '09:00') }}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-muted small">Shift End Time</label>
+                    <input type="time" name="custom_shift_end" id="create_custom_shift_end" class="form-control" value="{{ old('custom_shift_end', '18:00') }}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                <input type="date" name="dob" class="form-control @error('dob') is-invalid @enderror" value="{{ old('dob') }}" required>
+                @error('dob') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Personal Phone <span class="text-danger">*</span></label>
+                <input type="text" name="personal_phone" class="form-control @error('personal_phone') is-invalid @enderror" value="{{ old('personal_phone') }}" required placeholder="Phone number">
+                @error('personal_phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-success"><i class="fa fa-save me-1"></i>Create Login</button>
           </div>
       </form>
     </div>
@@ -246,6 +334,19 @@
 
 @push('scripts')
 <script>
+$(document).ready(function() {
+    @if($errors->hasAny(['name', 'employee_id', 'department_id', 'shift', 'dob', 'personal_phone']))
+        var addEmployeeModal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+        addEmployeeModal.show();
+    @endif
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show_import') === '1') {
+        var importModal = new bootstrap.Modal(document.getElementById('importModal'));
+        importModal.show();
+    }
+});
+
 function viewEmployee(id) {
     $('#viewModalBody').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Loading employee details...</p></div>');
     var myModal = new bootstrap.Modal(document.getElementById('viewModal'));
@@ -254,13 +355,30 @@ function viewEmployee(id) {
     $.ajax({
         url: "{{ url('admin/employees') }}/" + id,
         type: "GET",
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         success: function(response) {
             $('#viewModalBody').html(response);
         },
         error: function(xhr) {
-            $('#viewModalBody').html('<div class="alert alert-danger m-3">Error loading employee data. Please try again.</div>');
+            var errMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : "Error loading employee data (Status " + xhr.status + "). Please try again.";
+            console.error("View Employee Error:", xhr.responseText);
+            $('#viewModalBody').html('<div class="alert alert-danger m-3"><i class="fa fa-exclamation-circle me-2"></i>' + errMsg + '</div>');
         }
     });
+}
+
+function toggleCustomShiftInput(prefix) {
+    var select = document.getElementById(prefix + '_shift_select');
+    var container = document.getElementById(prefix + '_custom_shift_container');
+    if (select && container) {
+        if (select.value === 'custom') {
+            container.classList.remove('d-none');
+        } else {
+            container.classList.add('d-none');
+        }
+    }
 }
 </script>
 @endpush

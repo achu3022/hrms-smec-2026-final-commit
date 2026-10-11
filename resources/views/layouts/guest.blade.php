@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'EIMS Login') }}</title>
+        <title>{{ config('app.name', 'HRMS Login') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -67,7 +67,7 @@
                     </div>
                     
                     <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100 mb-4 tracking-tight leading-tight">
-                        Enterprise Information<br/>Management System
+                        Human Resource<br/>Management System
                     </h1>
                     <p class="text-indigo-200/80 text-lg max-w-md font-medium">
                         Streamline your operations with intelligent HR, seamless asset management, and powerful reporting.

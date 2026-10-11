@@ -16,7 +16,15 @@ class EmployeeFormController extends Controller
         $designations = \App\Models\Designation::where('is_active', true)->get();
         $branches = \App\Models\CompanyBranch::where('is_active', true)->get();
         
-        return view('employee.form', compact('departments', 'designations', 'branches'));
+        $employee = null;
+        if (auth()->guard('employee')->check()) {
+            $employee = auth()->guard('employee')->user()->employee;
+            if ($employee && $employee->is_profile_completed) {
+                return redirect()->route('employee.dashboard');
+            }
+        }
+        
+        return view('employee.form', compact('departments', 'designations', 'branches', 'employee'));
     }
 
     public function store(StoreEmployeeRequest $request)
@@ -60,8 +68,10 @@ class EmployeeFormController extends Controller
             }
         }
 
-        $employeeData = \Illuminate\Support\Arr::except($data, ['education', 'experience', 'certificates']);
-        $employee = Employee::create($employeeData);
+        $employeeData = \Illuminate\Support\Arr::except($data, ['education', 'experience', 'certificates', 'employee_id']);
+        
+        $employee = auth()->guard('employee')->user()->employee;
+        $employee->update($employeeData);
 
         if (isset($data['education'])) {
             foreach ($data['education'] as $edu) {
@@ -105,12 +115,33 @@ class EmployeeFormController extends Controller
             }
         }
 
+        $employee->update(['is_profile_completed' => true]);
+
+        // Calculate and initialize leave balances based on probation status
+        $isProbationOver = false;
+        if ($employee->joining_date) {
+            $isProbationOver = \Carbon\Carbon::parse($employee->joining_date)->copy()->addMonths(6)->isPast();
+        }
+
+        $leaveTypes = \App\Models\LeaveType::where('is_active', true)->get();
+        foreach ($leaveTypes as $type) {
+            $initialBalance = ($isProbationOver && in_array($type->name, ['Casual', 'Medical'])) ? 1 : 0;
+            \App\Models\LeaveBalance::firstOrCreate(
+                ['employee_id' => $employee->id, 'leave_type_id' => $type->id],
+                ['used' => 0, 'remaining' => 0]
+            )->update(['remaining' => $initialBalance]);
+        }
+
         try {
             \Illuminate\Support\Facades\Mail::to('hr@company.com')->send(new \App\Mail\NewEmployeeOnboarding($employee));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send onboarding email: ' . $e->getMessage());
         }
 
-        return response()->json(['success' => true, 'message' => 'Your employee information has been submitted successfully.']);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Your profile has been completed successfully.', 'redirect' => route('employee.dashboard')]);
+        }
+        
+        return redirect()->route('employee.dashboard')->with('success', 'Your profile has been completed successfully.');
     }
 }

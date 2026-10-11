@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SMEC HRMS</string>
+    <string name="title_activity_main">SMEC HRMS</string>
+    <string name="package_name">com.smec.eims</string>
+    <string name="custom_url_scheme">com.smec.eims</string>
+</resources>

@@ -2,13 +2,6 @@
 
 @section('content')
 <div class="row">
-    <div class="col-md-12 mb-3">
-        @if(session('success'))
-            <div class="alert alert-success">
-                {!! session('success') !!}
-            </div>
-        @endif
-    </div>
 
     <div class="col-md-8">
         <div class="card">
@@ -30,7 +23,7 @@
                         <tr>
                             <td>{{ $token->name }}</td>
                             <td>{{ $token->last_used_at ? $token->last_used_at->diffForHumans() : 'Never' }}</td>
-                            <td>{{ $token->created_at->format('d M Y') }}</td>
+                            <td>{{ $token->created_at->format('d-m-Y') }}</td>
                             <td>
                                 <form action="{{ route('admin.api-tokens.destroy', $token->id) }}" method="POST" class="d-inline">
                                     @csrf
